@@ -1,0 +1,54 @@
+# IPython log file
+
+get_ipython().magic(u'logstart spark_weifu_tutorial')
+rdd_1 = sc.parallelize([1,2,3,4,5,6,7])
+rdd_2 = sc.textFile('data/mllib/pic_data.txt')
+rdd = sc.parallelize([1,2,3])
+rdd.collect()
+rdd.count()
+rdd.first()
+rdd.take(5)
+ll = rdd.take(5)
+ll
+type(ll)
+def add(x,y):
+    return x+y
+
+def multiply(x,y):
+    return x*y
+
+rdd.reduce(add)
+rdd.reduce(multiply)
+ll.reduce(add)
+def square(x):
+    return x**2
+
+rdd_squared = rdd.map(square)
+rdd_squared.collect()
+rdd_squared = rdd.map(lambda x:x**2)
+rdd_squared
+rdd_squared.collect()
+def square(x):
+    return x**2
+
+def positive(x):
+    if x>0:
+        return True
+    return False
+
+rdd = sc.parallelize([1,2,-3,4,-5,6,7])
+rdd_pos = rdd.filter(positive)
+rdd_pos.collect()
+rdd.filter(lambda x: x>0).collect()
+rdd = sc.parallelize([("a",1),("a",2),("b",1)])
+rdd_group = rdd.groupByKey()
+rdd_group.collect()
+rdd_group.collect()
+rdd_group.collect()
+rdd = sc.parallelize([2,3,4])
+rdd.map(lambda x:range(1,x)).collect()
+rdd.flatMap(lambda x:range(1,x)).collect()
+text = sc.parallelize(["I stepped on a Corn Flake, now I am Cereal Killer","Hello world inside hllo world","Banada error", "Not Loream Ipsum", "waht a wonderful day", "what up?"])
+counts = text.flatMap(lambda line :line.split(" ")).map(lambda word :(word,1)).reduceByKey(lambda a,b:a+b)
+counts.collect()
+get_ipython().magic(u'logstop')
