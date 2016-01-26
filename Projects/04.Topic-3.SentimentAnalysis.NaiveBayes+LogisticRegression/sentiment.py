@@ -23,7 +23,7 @@ method = int(sys.argv[2])
 
 def main():
     train_pos, train_neg, test_pos, test_neg = load_data(path_to_data)
-    
+
     if method == 0:
         train_pos_vec, train_neg_vec, test_pos_vec, test_neg_vec = feature_vecs_NLP(train_pos, train_neg, test_pos, test_neg)
         nb_model, lr_model = build_models_NLP(train_pos_vec, train_neg_vec)
@@ -75,11 +75,10 @@ def feature_vecs_NLP(train_pos, train_neg, test_pos, test_neg):
     """
     # English stopwords from nltk
     stopwords = set(nltk.corpus.stopwords.words('english'))
-    pdb.set_trace()
     pos_term_dict, neg_term_dict, pos_file_dict, neg_file_dict = {}, {}, {}, {}
     candidate_features = set()
     features = []
-    def count( data):
+    def mycount(data):
         temp_dict = {}
         file_dict = {}
         for  row in data:
@@ -87,25 +86,44 @@ def feature_vecs_NLP(train_pos, train_neg, test_pos, test_neg):
             for word, counts in row_counts.iteritems():
                 if word in stopwords:
                     continue
-                temp_dict[word] = temp_dict.get(word,0) +counts
+                temp_dict[word] = temp_dict.get(word,0) +1
                 file_dict[word] = file_dict.get(word,0) +1
-                candidate_features.update(word)
-        return temp_dict, file_dict
 
-    pos_term_dict, pos_file_dict = count(train_pos)
-    neg_file_dict, neg_file_dict = count(train_neg)
+        for word, count in file_dict.iteritems():
+            if count >= len(data)*0.01:
+                candidate_features.add(word)
 
+        return (temp_dict, file_dict)
+
+    def create_features_vec(features,txt):
+        new_vect = []
+        for row in txt:
+            new_vect.append([1 if each in row else 0 for each in features])
+        return new_vect
+
+
+    pos_term_dict, pos_file_dict = mycount(train_pos)
+    neg_term_dict, neg_file_dict = mycount(train_neg)
+    pdb.set_trace()
     for each in candidate_features:
-        if pos_term_dict[each] >= len(train_pos)*0.01 and pos_file_dict[each] >= 2* neg_file_dict[each]:
-            features.append(each)
-        if neg_term_dict[each] >= len(train_neg)*0.01 and neg_file_dict[each] >= 2* pos_file_dict[each]:
-            features.append(each)
+        if each in pos_term_dict.keys():
+            if each in neg_file_dict.keys():
+                if pos_file_dict[each] >= 2* neg_file_dict[each]:
+                    features.append(each)
+            else: # if this feature does not exist in negative text
+                features.append(each)
+        elif each in neg_term_dict.keys():
+            if each in pos_term_dict.keys():
+                if neg_file_dict[each] >= 2* pos_file_dict[each]:
+                    features.append(each)
+            else: # if this feature does not exist in positive text
+                features.append(each)
 
-
-
-
-
-    # Determine a list of words that will be used as features. 
+    train_pos_vec = create_features_vec(features,train_pos)
+    train_neg_vec = create_features_vec(features,train_neg)
+    test_pos_vec = create_features_vec(features,test_pos)
+    test_neg_vec = create_features_vec(features,test_neg)
+    # Determine a list of words that will be used as features.
     # This list should have the following properties:
     #   (1) Contains no stop words
     #   (2) Is in at least 1% of the positive texts or 1% of the negative texts
@@ -135,7 +153,7 @@ def feature_vecs_DOC(train_pos, train_neg, test_pos, test_neg):
     model.build_vocab(sentences)
 
     # Train the model
-    # This may take a bit to run 
+    # This may take a bit to run
     for i in range(5):
         print "Training iteration %d" % (i)
         random.shuffle(sentences)
@@ -143,7 +161,7 @@ def feature_vecs_DOC(train_pos, train_neg, test_pos, test_neg):
 
     # Use the docvecs function to extract the feature vectors for the training and test data
     # YOUR CODE HERE
-    
+
     # Return the four feature vectors
     return train_pos_vec, train_neg_vec, test_pos_vec, test_neg_vec
 
@@ -159,7 +177,7 @@ def build_models_NLP(train_pos_vec, train_neg_vec):
     # For BernoulliNB, use alpha=1.0 and binarize=None
     # For LogisticRegression, pass no parameters
     # YOUR CODE HERE
-    
+
     return nb_model, lr_model
 
 
@@ -173,7 +191,7 @@ def build_models_DOC(train_pos_vec, train_neg_vec):
     # Use sklearn's GaussianNB and LogisticRegression functions to fit two models to the training data.
     # For LogisticRegression, pass no parameters
     # YOUR CODE HERE
-    
+
     return nb_model, lr_model
 
 
@@ -184,7 +202,7 @@ def evaluate_model(model, test_pos_vec, test_neg_vec, print_confusion=False):
     """
     # Use the predict function and calculate the true/false positives and true/false negative.
     # YOUR CODE HERE
-    
+
     if print_confusion:
         print "predicted:\tpos\tneg"
         print "actual:"
