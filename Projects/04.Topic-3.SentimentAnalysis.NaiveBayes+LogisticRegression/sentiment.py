@@ -6,6 +6,8 @@ import nltk
 import random
 random.seed(0)
 from gensim.models.doc2vec import LabeledSentence, Doc2Vec
+import pdb
+from collections import Counter
 #nltk.download("stopwords")          # Download the stop words from nltk
 
 
@@ -73,7 +75,36 @@ def feature_vecs_NLP(train_pos, train_neg, test_pos, test_neg):
     """
     # English stopwords from nltk
     stopwords = set(nltk.corpus.stopwords.words('english'))
-    
+    pdb.set_trace()
+    pos_term_dict, neg_term_dict, pos_file_dict, neg_file_dict = {}, {}, {}, {}
+    candidate_features = set()
+    features = []
+    def count( data):
+        temp_dict = {}
+        file_dict = {}
+        for  row in data:
+            row_counts = Counter(row)
+            for word, counts in row_counts.iteritems():
+                if word in stopwords:
+                    continue
+                temp_dict[word] = temp_dict.get(word,0) +counts
+                file_dict[word] = file_dict.get(word,0) +1
+                candidate_features.update(word)
+        return temp_dict, file_dict
+
+    pos_term_dict, pos_file_dict = count(train_pos)
+    neg_file_dict, neg_file_dict = count(train_neg)
+
+    for each in candidate_features:
+        if pos_term_dict[each] >= len(train_pos)*0.01 and pos_file_dict[each] >= 2* neg_file_dict[each]:
+            features.append(each)
+        if neg_term_dict[each] >= len(train_neg)*0.01 and neg_file_dict[each] >= 2* pos_file_dict[each]:
+            features.append(each)
+
+
+
+
+
     # Determine a list of words that will be used as features. 
     # This list should have the following properties:
     #   (1) Contains no stop words
