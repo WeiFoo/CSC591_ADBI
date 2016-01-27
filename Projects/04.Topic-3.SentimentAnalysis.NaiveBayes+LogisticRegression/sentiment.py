@@ -1,11 +1,13 @@
+from __future__ import division
 import sys
 import collections
-import sklearn.naive_bayes
-import sklearn.linear_model
+from sklearn.naive_bayes import BernoulliNB
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import GaussianNB
 import nltk
 import random
 random.seed(0)
-from gensim.models.doc2vec import LabeledSentence, Doc2Vec
+from gensim.models.doc2vec import LabeledSentence, Doc2Vec, TaggedDocument
 import pdb
 from collections import Counter
 #nltk.download("stopwords")          # Download the stop words from nltk
@@ -86,7 +88,7 @@ def feature_vecs_NLP(train_pos, train_neg, test_pos, test_neg):
             for word, counts in row_counts.iteritems():
                 if word in stopwords:
                     continue
-                temp_dict[word] = temp_dict.get(word,0) +1
+                temp_dict[word] = temp_dict.get(word,0) +counts
                 file_dict[word] = file_dict.get(word,0) +1
 
         for word, count in file_dict.iteritems():
@@ -104,7 +106,6 @@ def feature_vecs_NLP(train_pos, train_neg, test_pos, test_neg):
 
     pos_term_dict, pos_file_dict = mycount(train_pos)
     neg_term_dict, neg_file_dict = mycount(train_neg)
-    pdb.set_trace()
     for each in candidate_features:
         if each in pos_term_dict.keys():
             if each in neg_file_dict.keys():
@@ -148,6 +149,22 @@ def feature_vecs_DOC(train_pos, train_neg, test_pos, test_neg):
     # YOUR CODE HERE
 
     # Initialize model
+    def prepare(data, label):
+      temp = []
+      for i,row in enumerate(data):
+        temp.append(TaggedDocument(words=row, tags =[label+str(i)]))
+      return temp
+    def transform(model, label,data):
+        out = []
+        for i, row in enumerate(data):
+            out.append(model.docvecs[label+str(i)])
+        return out
+
+
+    labeled_train_pos = prepare(train_pos,"TRAIN_POS_")
+    labeled_train_neg = prepare(train_neg,"TRAIN_NEG_")
+    labeled_test_pos = prepare(test_pos, "TEST_POS_")
+    labeled_test_neg = prepare(test_neg, "TEST_NEG_")
     model = Doc2Vec(min_count=1, window=10, size=100, sample=1e-4, negative=5, workers=4)
     sentences = labeled_train_pos + labeled_train_neg + labeled_test_pos + labeled_test_neg
     model.build_vocab(sentences)
@@ -161,7 +178,11 @@ def feature_vecs_DOC(train_pos, train_neg, test_pos, test_neg):
 
     # Use the docvecs function to extract the feature vectors for the training and test data
     # YOUR CODE HERE
-
+    train_pos_vec = transform(model,"TRAIN_POS_",train_pos)
+    train_neg_vec = transform(model,"TRAIN_NEG_",train_neg)
+    test_pos_vec = transform(model, "TEST_POS_", test_pos)
+    test_neg_vec = transform(model,"TEST_NEG_",test_neg)
+    # pdb.set_trace()
     # Return the four feature vectors
     return train_pos_vec, train_neg_vec, test_pos_vec, test_neg_vec
 
@@ -177,7 +198,11 @@ def build_models_NLP(train_pos_vec, train_neg_vec):
     # For BernoulliNB, use alpha=1.0 and binarize=None
     # For LogisticRegression, pass no parameters
     # YOUR CODE HERE
-
+    train = train_pos_vec+train_neg_vec
+    lr_model = LogisticRegression()
+    lr_model.fit(train, Y)
+    nb_model = BernoulliNB(alpha=1.0, binarize=None)
+    nb_model.fit(train, Y)
     return nb_model, lr_model
 
 
@@ -187,10 +212,14 @@ def build_models_DOC(train_pos_vec, train_neg_vec):
     Returns a GaussianNB and LosticRegression Model that are fit to the training data.
     """
     Y = ["pos"]*len(train_pos_vec) + ["neg"]*len(train_neg_vec)
-
+    train = train_pos_vec + train_neg_vec
     # Use sklearn's GaussianNB and LogisticRegression functions to fit two models to the training data.
     # For LogisticRegression, pass no parameters
     # YOUR CODE HERE
+    nb_model = GaussianNB()
+    nb_model.fit(train, Y)
+    lr_model = LogisticRegression()
+    lr_model.fit(train,Y)
 
     return nb_model, lr_model
 
@@ -202,6 +231,25 @@ def evaluate_model(model, test_pos_vec, test_neg_vec, print_confusion=False):
     """
     # Use the predict function and calculate the true/false positives and true/false negative.
     # YOUR CODE HERE
+
+    tp, fn, fp, tn = 0, 0, 0, 0
+    predict_pos = model.predict(test_pos_vec)
+    predict_neg = model.predict(test_neg_vec)
+
+    for each in predict_pos:
+      if each == "pos":
+        tp +=1
+      else:
+        fp +=1
+
+    for each in predict_neg:
+      if each == "neg":
+        tn +=1
+      else:
+        fn +=1
+
+    accuracy = (tp+tn)/(tp+tn+fn+fp)
+
 
     if print_confusion:
         print "predicted:\tpos\tneg"
