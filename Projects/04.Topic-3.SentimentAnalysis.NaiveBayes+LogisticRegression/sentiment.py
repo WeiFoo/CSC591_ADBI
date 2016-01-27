@@ -88,7 +88,7 @@ def feature_vecs_NLP(train_pos, train_neg, test_pos, test_neg):
             for word, counts in row_counts.iteritems():
                 if word in stopwords:
                     continue
-                temp_dict[word] = temp_dict.get(word,0) +counts
+                temp_dict[word] = temp_dict.get(word,0) +1
                 file_dict[word] = file_dict.get(word,0) +1
 
         for word, count in file_dict.iteritems():
@@ -113,7 +113,7 @@ def feature_vecs_NLP(train_pos, train_neg, test_pos, test_neg):
                     features.append(each)
             else: # if this feature does not exist in negative text
                 features.append(each)
-        elif each in neg_term_dict.keys():
+        if each in neg_term_dict.keys():
             if each in pos_term_dict.keys():
                 if neg_file_dict[each] >= 2* pos_file_dict[each]:
                     features.append(each)
