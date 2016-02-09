@@ -89,7 +89,7 @@ dummy$Duration<-factor(dummy$Duration)
 newdummy <- model.matrix(~., data =dummy )
 
 ###########################
-#####
+##### not finished yet!! probably wrong here~~
 ## 60% of the sample size
 smp_size <- floor(0.6 * nrow(newdummy))
 
