@@ -1,3 +1,4 @@
+##### 
 library(car)
 library(gdata)
 # library(AER)
@@ -12,6 +13,18 @@ set.seed(1)
 dummy <-data
 dummy$Duration <- factor(data$Duration)
 getpivot <-function(category){
+##### generate a pivot table  like the following one.
+#  firstly, calculate the distribution of each entry based on competitive is 0 or 1.
+#  then, find the items closed to each other within 0.05 to merge
+#  (Note, you can pick most nearest two! but I didn't do it here for simplicity).
+#  since EUR and US can be merged, I create a new col V4 to give
+#  a common level to both "EUR" and "US".
+#         V1        V2     V3      V4
+#   2 0.6870748 0.3129252 GBP     <NA>
+#   1 0.5515947 0.4484053 EUR new_ EUR
+#   3 0.5193498 0.4806502  US new_ EUR
+#
+#
   pivot <-data.frame()
   for (i in 1:length(levels(category))){
     pivot[i,1] <- length(which(data[category==levels(category)[i],]$Competitive.==1))/length(which(category==levels(category)[i]))
@@ -37,6 +50,7 @@ getpivot <-function(category){
 }
 
 merge <-function(Category, pivot){
+##### according to "V4"in pivot is NA or not NA, we merge the items.
   for( i in 1:nrow(pivot)){
     if(!is.na(pivot[i,4])){
       levels(Category)<-c(levels(Category),pivot[i,4])
